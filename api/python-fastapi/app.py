@@ -57,6 +57,7 @@ INTERNAL_SHARED_SECRET = os.getenv("INTERNAL_SHARED_SECRET", "")
 MAX_FILE_SIZE_MB = int(os.getenv("MAX_FILE_SIZE_MB", "20"))
 ALLOWED_EXTENSIONS = set(os.getenv("ALLOWED_EXTENSIONS", "pdf,docx,eml").split(","))
 WEBHOOK_SHARED_SECRET = os.getenv("WEBHOOK_SHARED_SECRET", "")
+NODE_REQUEST_TIMEOUT_SEC = int(os.getenv("NODE_REQUEST_TIMEOUT_SEC", "180"))
 
 app = FastAPI(title="Query–Retrieval API", version="0.1.0")
 
@@ -181,7 +182,7 @@ async def query_endpoint(
             f"{NODE_SERVICE_URL}/process",
             payload,
             {"X-Internal-Shared-Secret": INTERNAL_SHARED_SECRET},
-            75
+            NODE_REQUEST_TIMEOUT_SEC
         )
         return JSONResponse(result)
     except urllib.error.HTTPError as e:
@@ -248,7 +249,7 @@ async def webhook_submission(request: Request):
             f"{NODE_SERVICE_URL}/process",
             payload,
             {"X-Internal-Shared-Secret": INTERNAL_SHARED_SECRET},
-            90
+            NODE_REQUEST_TIMEOUT_SEC
         )
         return JSONResponse(result)
     except urllib.error.HTTPError as e:
