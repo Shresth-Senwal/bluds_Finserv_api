@@ -269,8 +269,10 @@ async def health():
     return {"status": "ok"}
 
 
+from typing import Dict, Any
+
 @app.get("/health/details")
-async def health_details():
+async def health_details() -> Dict[str, Any]:
     """Diagnostic endpoint: reveals non-sensitive runtime config for debugging.
     Does not expose secrets. Useful to verify NODE_SERVICE_URL wiring in prod.
     """
