@@ -46,11 +46,30 @@ const mongo = new MongoClient(MONGODB_URI);
 const pinecone = new Pinecone({ apiKey: PINECONE_API_KEY });
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-let embedder; // BERT embeddings pipeline
-(async () => {
-  // Default to "sentence-transformers/all-MiniLM-L6-v2"-like model from xenova
-  embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+// --- Embedder initialization with warmup and readiness flag ---
+let embedder; // embeddings pipeline instance
+let embedderReady = false;
+const initEmbedder = (async () => {
+  try {
+    const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    // Run a tiny warmup to trigger weight download & JIT
+    await pipe('warmup', { pooling: 'mean', normalize: true });
+    embedder = pipe;
+    embedderReady = true;
+    console.log('Embedder initialized and warmed up.');
+  } catch (e) {
+    console.error('Failed to initialize embedder:', e);
+  }
 })();
+
+async function ensureEmbedderReady(timeoutMs = 60000) {
+  const start = Date.now();
+  while (!embedderReady) {
+    if (Date.now() - start > timeoutMs) return false;
+    await new Promise(r => setTimeout(r, 300));
+  }
+  return true;
+}
 
 const schema = Joi.object({
   query: Joi.string().min(3).max(4000).required(),
@@ -78,7 +97,6 @@ function chunkText(text, size = CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
 }
 
 async function embedTexts(texts) {
-  // Returns cosine-normalized vectors
   const embs = [];
   for (const t of texts) {
     const output = await embedder(t, { pooling: 'mean', normalize: true });
@@ -196,6 +214,11 @@ const index_name = PINECONE_INDEX;
 // });
 
 app.post('/process', requireAuth, async (req, res) => {
+  const ready = await ensureEmbedderReady(60000);
+  if (!ready) {
+    return res.status(503).json({ error: 'Service warming up, please retry shortly' });
+  }
+
   const start = Date.now();
   const { value, error } = schema.validate(req.body);
   if (error) return res.status(400).json({ error: error.message });
@@ -291,7 +314,7 @@ app.post('/process', requireAuth, async (req, res) => {
   }
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', embedderReady }));
 
 app.listen(PORT, () => console.log(`Node backend listening on ${PORT}`));
 // No hardcoded test file references; all file handling is based on incoming API requests only
