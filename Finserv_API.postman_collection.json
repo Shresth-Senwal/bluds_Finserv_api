@@ -1,0 +1,76 @@
+{
+  "info": {
+    "_postman_id": "bluds-finserv-api-collection",
+    "name": "Finserv API Collection",
+    "description": "Postman collection for testing FastAPI and Node.js endpoints for Finserv API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Query (File Upload)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "query", "value": "Does this policy cover knee surgery?", "type": "text" },
+            { "key": "files", "type": "file", "src": "data/test/test.pdf" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/query",
+          "host": ["{{base_url}}"],
+          "path": ["query"]
+        }
+      }
+    },
+    {
+      "name": "Query (URL)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Does this policy cover knee surgery?\",\n  \"urls\": [\"https://example.com/policy.pdf\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/query",
+          "host": ["{{base_url}}"],
+          "path": ["query"]
+        }
+      }
+    },
+    {
+      "name": "Webhook Submission",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Does this policy cover knee surgery?\",\n  \"urls\": [\"https://example.com/policy.pdf\"],\n  \"files\": []\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/submission",
+          "host": ["{{base_url}}"],
+          "path": ["webhook", "submission"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://bluds-finserv-api.up.railway.app" }
+  ]
+}
