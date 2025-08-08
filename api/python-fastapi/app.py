@@ -269,6 +269,18 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/health/details")
+async def health_details():
+    """Diagnostic endpoint: reveals non-sensitive runtime config for debugging.
+    Does not expose secrets. Useful to verify NODE_SERVICE_URL wiring in prod.
+    """
+    return {
+        "status": "ok",
+        "node_service_url": NODE_SERVICE_URL,
+        "webhook_secret_enabled": bool(WEBHOOK_SHARED_SECRET),
+    }
+
+
 if __name__ == "__main__":
     # Local/dev entrypoint. Railway will set PORT; default to 8000.
     import uvicorn
