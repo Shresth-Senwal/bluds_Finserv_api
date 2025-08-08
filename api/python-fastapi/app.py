@@ -37,7 +37,7 @@ Sample success response:
   }
 """
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, HttpUrl, field_validator
@@ -67,6 +67,8 @@ app.add_middleware(
     allow_methods=["POST"],
     allow_headers=["*"]
 )
+
+router = APIRouter()
 
 # Helpers to satisfy type checkers for default_factory
 def _empty_httpurl_list() -> List[HttpUrl]:
@@ -193,12 +195,14 @@ async def query_endpoint(
 
 
 # --- New webhook endpoint: accepts JSON payload; outputs JSON ---
-@app.post("/webhook/submission")
+@router.post("/webhook/submission")
 async def webhook_submission(request: Request):
-    """Webhook endpoint for JSON submissions.
-    Accepts payload: { query, urls[], files[]: { filename, contentLatin1? | contentBase64? } }
-    Verifies optional WEBHOOK_SHARED_SECRET via 'X-Webhook-Secret' header.
-    Forwards to Node service and returns JSON response.
+    """
+    Receives and processes webhook submissions from Railway.
+    Args:
+        request (Request): Incoming HTTP request with JSON payload.
+    Returns:
+        JSONResponse: Status and message.
     """
     if not INTERNAL_SHARED_SECRET:
         raise HTTPException(status_code=500, detail="Server misconfigured")
