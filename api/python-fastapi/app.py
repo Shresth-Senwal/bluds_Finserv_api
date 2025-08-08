@@ -198,7 +198,7 @@ async def query_endpoint(
 @router.post("/webhook/submission")
 async def webhook_submission(request: Request):
     """
-    Receives and processes webhook submissions from Railway.
+    Receives and processes webhook submissions.
     Args:
         request (Request): Incoming HTTP request with JSON payload.
     Returns:
