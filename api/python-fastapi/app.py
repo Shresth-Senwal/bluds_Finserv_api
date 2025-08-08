@@ -261,6 +261,9 @@ async def webhook_submission(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Register router so /webhook/submission is exposed
+app.include_router(router)
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
