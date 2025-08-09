@@ -124,13 +124,24 @@ def _validate_extension(filename: str) -> bool:
 
 def _post_json_sync(url: str, payload: Mapping[str, Any], headers: Mapping[str, str], timeout: int = 75) -> Dict[str, Any]:
     data = json.dumps(dict(payload)).encode('utf-8')
-    req = urllib.request.Request(url, data=data, method='POST')
-    req.add_header('Content-Type', 'application/json')
-    for k, v in headers.items():
-        req.add_header(k, v)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        body = resp.read()
-        return json.loads(body.decode('utf-8'))
+    attempt = 0
+    backoffs = [0.5, 1.0, 2.0]  # seconds
+    while True:
+        req = urllib.request.Request(url, data=data, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        for k, v in headers.items():
+            req.add_header(k, v)
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                body = resp.read()
+                return json.loads(body.decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503) and attempt < len(backoffs):
+                import time
+                time.sleep(backoffs[attempt])
+                attempt += 1
+                continue
+            raise
 
 
 @app.post("/query")
